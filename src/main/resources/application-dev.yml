@@ -1,0 +1,49 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: mcp-sse-server
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo-key}
+      chat:
+        options:
+          model: gpt-3.5-turbo
+  
+  # 数据库配置
+  datasource:
+    url: jdbc:postgresql://116.63.181.73:6996/sp
+    username: "notdel"
+    password: "user1@PG@2025"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      validation-timeout: 5000
+      
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # 临时改为create-drop模式，重新创建表
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# API基础URL配置（用于数据库工具的URL构建）
+api:
+  base-url: "http://116.63.146.89:60011"
+
+logging:
+  level:
+    com.guian.smartsite.server: DEBUG
+    org.springframework.ai: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

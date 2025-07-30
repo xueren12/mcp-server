@@ -1,0 +1,18 @@
+{
+    "maven.view": "hierarchical",
+    "trae.autoApply": true,
+    "trae.codeReview.autoAccept": true,
+    "trae.suggestions.autoApply": true,
+    "trae.edits.requireConfirmation": false,
+    "trae.workspace.autoSave": true,
+    "trae.edits.autoApply": true,
+    "trae.edits.batchApply": true,
+    "trae.codeGeneration.autoAccept": true,
+    "trae.codeGeneration.batchMode": true,
+    "editor.acceptSuggestionOnEnter": "on",
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": true,
+        "strings": true
+    }
+}
