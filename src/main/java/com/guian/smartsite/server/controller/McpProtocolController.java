@@ -136,25 +136,35 @@ public class McpProtocolController {
      * 处理工具调用请求
      */
     private Mono<ResponseEntity<Map<String, Object>>> handleToolsCall(Object id, Map<String, Object> params) {
+        log.info("=== MCP协议工具调用开始 ===");
         log.info("处理工具调用请求: {}", params);
         
         try {
             String toolName = (String) params.get("name");
             Map<String, Object> arguments = (Map<String, Object>) params.get("arguments");
             
+            log.info("工具名称: {}, 参数: {}", toolName, arguments);
+            
             if (toolName == null) {
+                log.error("工具名称为空");
                 return Mono.just(ResponseEntity.badRequest().body(createErrorResponse(id, -32602, "Missing tool name")));
             }
             
             // 统一使用 DynamicToolService 处理所有工具调用 - 使用响应式方式
-            return dynamicToolService.callApi(toolName, arguments != null ? arguments : Map.of())
+            log.info("调用 DynamicToolService.callApiWithType: {}", toolName);
+            return dynamicToolService.callApiWithType(toolName, arguments != null ? arguments : Map.of())
                 .map(result -> {
+                    log.info("=== DynamicToolService 返回结果 ===");
+                    log.info("结果长度: {}", result != null ? result.length() : 0);
+                    log.info("结果内容前200字符: {}", result != null && result.length() > 200 ? result.substring(0, 200) + "..." : result);
+                    
                     Map<String, Object> content = Map.of(
                         "type", "text",
                         "text", result
                     );
                     
                     Map<String, Object> responseResult = Map.of("content", List.of(content));
+                    log.info("=== MCP协议响应构建完成 ===");
                     return ResponseEntity.ok(createSuccessResponse(id, responseResult));
                 })
                 .onErrorResume(e -> {

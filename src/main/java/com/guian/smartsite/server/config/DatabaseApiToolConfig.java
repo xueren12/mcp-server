@@ -33,7 +33,7 @@ public class DatabaseApiToolConfig {
     public void loadToolsFromDatabase() {
         log.info("开始从数据库加载API工具配置...");
         try {
-            List<ApiInfo> apiInfoList = apiInfoRepository.findAllActive();
+            List<ApiInfo> apiInfoList = apiInfoRepository.findByProjectId(1953288277076803585L);
             log.info("从数据库查询到 {} 条API记录", apiInfoList.size());
             
             this.tools = apiInfoList.stream()
@@ -51,12 +51,7 @@ public class DatabaseApiToolConfig {
         }
     }
     
-    /**
-     * 重新加载工具配置
-     */
-    public void reloadTools() {
-        loadToolsFromDatabase();
-    }
+
     
     /**
      * 将ApiInfo转换为ApiTool
@@ -67,6 +62,15 @@ public class DatabaseApiToolConfig {
         apiTool.setDescription(apiInfo.getApiDesc());
         apiTool.setApiType(apiInfo.getApiType());
         apiTool.setMockData(apiInfo.getMockData());
+        
+        // 确保dataType有合适的值，根据工具名称智能设置
+        String dataType = apiInfo.getDataType();
+        if (dataType == null || dataType.trim().isEmpty()) {
+            // 根据工具名称智能设置dataType
+            dataType = inferDataTypeFromToolName(apiInfo.getApiName());
+            log.info("工具 {} 的dataType为空，根据工具名称推断设置为: {}", apiInfo.getApiName(), dataType);
+        }
+        apiTool.setDataType(dataType);
         
         // 处理API路径：如果不是完整URL，则添加基础URL前缀
         String apiPath = apiInfo.getApiPath();
@@ -98,6 +102,55 @@ public class DatabaseApiToolConfig {
         return apiTool;
     }
     
+    /**
+     * 根据工具名称推断数据类型
+     */
+    private String inferDataTypeFromToolName(String toolName) {
+        if (toolName == null) {
+            return "API";
+        }
+        
+        String name = toolName.toLowerCase();
+        
+        // 图例相关
+        if (name.contains("图例") || name.contains("legend")) {
+            return "legend";
+        }
+        
+        // POI相关
+        if (name.contains("poi") || name.contains("配套") || name.contains("兴趣点")) {
+            return "poi";
+        }
+        
+        // 地块/几何数据相关
+        if (name.contains("地块") || name.contains("轮廓") || name.contains("geometry") || name.contains("range")) {
+            return "geometry";
+        }
+        
+        // 路径相关
+        if (name.contains("path") || name.contains("路径") || name.contains("路网")) {
+            return "path";
+        }
+        
+        // 文字/标签相关
+        if (name.contains("文字") || name.contains("标签") || name.contains("text") || name.contains("label")) {
+            return "text";
+        }
+        
+        // 统计数据相关
+        if (name.contains("统计") || name.contains("数据") || name.contains("statistics") || name.contains("data")) {
+            return "statistics";
+        }
+        
+        // 点位相关
+        if (name.contains("点位") || name.contains("点") || name.contains("point")) {
+            return "point";
+        }
+        
+        // 默认返回API
+        return "API";
+    }
+    
     @Data
     public static class ApiTool {
         private String name;
@@ -106,6 +159,7 @@ public class DatabaseApiToolConfig {
         private String method = "GET";
         private String apiType;
         private String mockData;
+        private String dataType;
         private Map<String, Object> headers;
         private Map<String, ParameterInfo> parameters;
     }

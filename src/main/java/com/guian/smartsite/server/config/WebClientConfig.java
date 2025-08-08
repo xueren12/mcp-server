@@ -10,14 +10,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
 
     @Bean
-    public WebClient.Builder webClientBuilder() {
+    public WebClient webClient() {
         return WebClient.builder()
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 增加到10MB
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-    }
-
-    @Bean
-    public WebClient webClient(WebClient.Builder builder) {
-        return builder.build();
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 }

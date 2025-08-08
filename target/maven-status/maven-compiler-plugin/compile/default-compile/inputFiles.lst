@@ -1,8 +1,8 @@
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\config\DatabaseApiToolConfig.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\config\DataInitializer.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\config\WebClientConfig.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\controller\McpProtocolController.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\entity\ApiInfo.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\repository\ApiInfoRepository.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\service\DynamicToolService.java
-d:\spring-ai-mcp-demo-master\mcp-langchain4j-server\src\main\java\com\guian\smartsite\server\SmartSiteServerApplication.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\DatabaseApiToolConfig.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\DataInitializer.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\WebClientConfig.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\controller\McpProtocolController.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\entity\ApiInfo.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\repository\ApiInfoRepository.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\service\DynamicToolService.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\SmartSiteServerApplication.java

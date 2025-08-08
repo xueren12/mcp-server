@@ -13,9 +13,9 @@ spring:
   
   # 数据库配置
   datasource:
-    url: jdbc:postgresql://116.63.181.73:6996/sp
-    username: "notdel"
-    password: "user1@PG@2025"
+    url: jdbc:postgresql://localhost:15432/sp
+    username: "postgres"
+    password: "123456"
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -27,7 +27,7 @@ spring:
   # JPA配置
   jpa:
     hibernate:
-      ddl-auto: create-drop  # 临时改为create-drop模式，重新创建表
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:

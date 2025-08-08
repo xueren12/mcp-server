@@ -23,7 +23,7 @@ public class DataInitializer implements CommandLineRunner {
             log.info("开始检查API工具数据...");
             
             // 只读取数据库中现有的API工具数量
-            long count = apiInfoRepository.count();
+            long count = apiInfoRepository.findByProjectId(1953288277076803585L).size();
             log.info("当前数据库中有 {} 条API工具记录", count);
             
             if (count > 0) {

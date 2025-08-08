@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
-import java.time.LocalDateTime;
-
 /**
  * API信息表实体类
  */
@@ -82,7 +80,7 @@ public class ApiInfo {
     private String datasourceType;
     
     /**
-     * 项目id
+     * 项目ID
      */
     @Column(name = "project_id", columnDefinition = "BIGINT")
     private Long projectId;
@@ -94,40 +92,10 @@ public class ApiInfo {
     private String apiDesc;
     
     /**
-     * 删除标志（0代表存在 2代表删除）
+     * 删除标志
      */
     @Column(name = "del_flag")
     private String delFlag;
-    
-    /**
-     * 创建者
-     */
-    @Column(name = "create_by")
-    private Long createBy;
-    
-    /**
-     * 创建时间
-     */
-    @Column(name = "create_time")
-    private LocalDateTime createTime;
-    
-    /**
-     * 更新者
-     */
-    @Column(name = "update_by")
-    private Long updateBy;
-    
-    /**
-     * 更新时间
-     */
-    @Column(name = "update_time")
-    private LocalDateTime updateTime;
-    
-    /**
-     * 创建部门
-     */
-    @Column(name = "create_dept")
-    private Long createDept;
     
     /**
      * 请求参数
@@ -136,38 +104,8 @@ public class ApiInfo {
     private String requestParams;
     
     /**
-     * 脚本id
+     * 数据类型
      */
-    @Column(name = "script_id", columnDefinition = "BIGINT")
-    private Long scriptId;
-    
-    /**
-     * 返回映射脚本
-     */
-    @Column(name = "response_mapping_script", columnDefinition = "TEXT")
-    private String responseMappingScript;
-    
-    /**
-     * 是否分页
-     */
-    @Column(name = "page_setup", columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private Boolean pageSetup;
-    
-    /**
-     * 是否开启映射
-     */
-    @Column(name = "mapping_enable", columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private Boolean mappingEnable;
-    
-    /**
-     * 限流策略id
-     */
-    @Column(name = "rate_limit_rule_id", columnDefinition = "BIGINT")
-    private Long rateLimitRuleId;
-    
-    /**
-     * 缓存策略id
-     */
-    @Column(name = "cache_config_id", columnDefinition = "BIGINT")
-    private Long cacheConfigId;
+    @Column(name = "data_type")
+    private String dataType = "API";
 }
