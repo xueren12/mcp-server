@@ -3,13 +3,13 @@ server:
 
 spring:
   application:
-    name: mcp-sse-server
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:demo-key}
-      chat:
-        options:
-          model: gpt-3.5-turbo
+    name: mcp-server
+  
+  # WebFlux配置 - 解决大数据量传输问题
+  webflux:
+    max-in-memory-size: 10MB
+  codec:
+    max-in-memory-size: 10MB
   
   # 数据库配置
   datasource:
@@ -38,10 +38,14 @@ spring:
 api:
   base-url: "http://116.63.146.89:60011"
 
+# MCP客户端配置（用于SSE推送）
+mcp:
+  client:
+    base-url: "http://localhost:8080"
+
 logging:
   level:
     com.guian.smartsite.server: DEBUG
-    org.springframework.ai: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     

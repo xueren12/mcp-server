@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guian.smartsite.server.config.DatabaseApiToolConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -12,7 +13,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +24,9 @@ public class DynamicToolService {
     private final DatabaseApiToolConfig databaseApiToolConfig;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    
+    @Value("${mcp.client.base-url:http://localhost:8080}")
+    private String mcpClientBaseUrl;
     
     public DynamicToolService(DatabaseApiToolConfig databaseApiToolConfig) {
         this.databaseApiToolConfig = databaseApiToolConfig;
@@ -41,31 +44,24 @@ public class DynamicToolService {
             return Mono.just("工具不存在: " + toolName);
         }
         
-        // 处理自然语言参数解析
-        if (parameters != null && parameters.containsKey("naturalLanguageInput")) {
-            String naturalLanguageInput = (String) parameters.get("naturalLanguageInput");
-            log.info("检测到自然语言输入，开始解析: {}", naturalLanguageInput);
-            parameters = parseNaturalLanguageParameters(naturalLanguageInput, tool);
-            log.info("解析后的参数: {}", parameters);
-        }
-        
-        // 验证必填参数
-        String validationError = validateRequiredParameters(tool, parameters);
-        if (validationError != null) {
-            return Mono.just(validationError);
-        }
-        
+        return callApiInternal(tool, parameters);
+    }
+    
+    /**
+     * 内部API调用方法（核心逻辑）
+     */
+    private Mono<String> callApiInternal(DatabaseApiToolConfig.ApiTool tool, Map<String, Object> parameters) {
         // 处理静态工具 - 直接返回mockData
         if ("STATIC".equalsIgnoreCase(tool.getApiType()) && tool.getMockData() != null) {
-            log.info("调用静态工具: {} - 返回mockData", toolName);
+            log.info("调用静态工具: {} - 返回mockData", tool.getName());
             return Mono.just(addTypeToResponse(tool.getMockData(), tool.getDataType()));
         }
         
         try {
-            log.info("调用API工具: {} - {}", toolName, tool.getUrl());
+            log.info("调用API工具: {} - {}", tool.getName(), tool.getUrl());
             
             String url = tool.getUrl();
-            
+             
             if ("GET".equalsIgnoreCase(tool.getMethod())) {
                 // GET请求：将参数添加到URL
                 if (parameters != null && !parameters.isEmpty()) {
@@ -97,13 +93,13 @@ public class DynamicToolService {
                         .bodyToMono(String.class)
                         .timeout(Duration.ofSeconds(30))
                         .map(response -> addTypeToResponse(response, tool.getDataType()))
-                        .doOnSuccess(response -> log.info("API工具 {} 调用成功", toolName))
+                        .doOnSuccess(response -> log.info("API工具 {} 调用成功", tool.getName()))
                         .onErrorResume(WebClientResponseException.class, e -> {
-                            log.error("API工具 {} 调用失败，状态码: {}", toolName, e.getStatusCode(), e);
+                            log.error("API工具 {} 调用失败，状态码: {}", tool.getName(), e.getStatusCode(), e);
                             return Mono.just("调用API工具失败: " + e.getMessage());
                         })
                         .onErrorResume(Exception.class, e -> {
-                            log.error("调用API工具 {} 时发生异常", toolName, e);
+                            log.error("调用API工具 {} 时发生异常", tool.getName(), e);
                             return Mono.just("调用API工具失败: " + e.getMessage());
                         });
                         
@@ -122,59 +118,137 @@ public class DynamicToolService {
                         requestWithBody.header(key, value.toString()));
                 }
                 
-                return requestWithBody
+                return requestSpec
                         .retrieve()
                         .bodyToMono(String.class)
                         .timeout(Duration.ofSeconds(30))
                         .map(response -> addTypeToResponse(response, tool.getDataType()))
-                        .doOnSuccess(response -> log.info("API工具 {} 调用成功", toolName))
+                        .doOnSuccess(response -> log.info("API工具 {} 调用成功", tool.getName()))
                         .onErrorResume(WebClientResponseException.class, e -> {
-                            log.error("API工具 {} 调用失败，状态码: {}", toolName, e.getStatusCode(), e);
+                            log.error("API工具 {} 调用失败，状态码: {}", tool.getName(), e.getStatusCode(), e);
                             return Mono.just("调用API工具失败: " + e.getMessage());
                         })
                         .onErrorResume(Exception.class, e -> {
-                            log.error("调用API工具 {} 时发生异常", toolName, e);
+                            log.error("调用API工具 {} 时发生异常", tool.getName(), e);
                             return Mono.just("调用API工具失败: " + e.getMessage());
                         });
             }
             
         } catch (Exception e) {
-            log.error("调用API工具 {} 时发生异常", toolName, e);
+            log.error("调用API工具 {} 时发生异常", tool.getName(), e);
             return Mono.just("调用API工具失败: " + e.getMessage());
         }
     }
     
     /**
-     * 调用API工具并添加type字段 - 专门为MCP协议使用
+     * 为MCP协议调用API工具
      */
     public Mono<String> callApiWithType(String toolName, Map<String, Object> parameters) {
-        log.info("=== DynamicToolService.callApiWithType 开始 ===");
-        log.info("MCP协议调用API工具: {}, 参数: {}", toolName, parameters);
+        log.info("调用API工具: {}", toolName);
         
-        // 查找工具信息
-        DatabaseApiToolConfig.ApiTool tool = findToolByName(toolName);
-        if (tool != null) {
-            log.info("找到工具: {}", tool.getName());
-            log.info("工具类型: {}", tool.getApiType());
-            log.info("工具URL: {}", tool.getUrl());
-            log.info("工具dataType: {}", tool.getDataType());
-            log.info("工具mockData: {}", tool.getMockData() != null ? tool.getMockData().substring(0, Math.min(100, tool.getMockData().length())) + "..." : "null");
-        } else {
-            log.error("未找到工具: {}", toolName);
+        // 直接调用API，
+        return callApi(toolName, parameters)
+            .doOnSuccess(response -> log.info("API调用成功，响应长度: {}", response.length()))
+            .doOnError(error -> log.error("API调用失败", error));
+    }
+    
+    /**
+     * 为MCP协议调用API工具（带项目ID验证）
+     */
+    public Mono<String> callApiWithTypeAndProjectId(String toolName, Map<String, Object> parameters, Long projectId) {
+        log.info("调用API工具: {}，项目ID: {}", toolName, projectId);
+        
+        // 使用带项目ID验证的工具查找
+        DatabaseApiToolConfig.ApiTool tool = findToolByNameAndProjectId(toolName, projectId);
+        if (tool == null) {
+            if (projectId != null) {
+                return Mono.just("工具不存在或不属于指定项目: " + toolName);
+            } else {
+                return Mono.just("工具不存在: " + toolName);
+            }
         }
         
-        return callApi(toolName, parameters)
-            .doOnNext(result -> {
-                log.info("=== callApi 返回结果 ===");
-                log.info("结果长度: {}", result != null ? result.length() : 0);
-                log.info("结果前200字符: {}", result != null && result.length() > 200 ? result.substring(0, 200) + "..." : result);
-            })
-            .doOnError(error -> {
-                log.error("=== callApi 发生错误 ===", error);
-            });
+        // 验证必需参数
+        String parameterValidationError = validateRequiredParameters(tool, parameters);
+        if (parameterValidationError != null) {
+            log.error("参数验证失败: {}", parameterValidationError);
+            return Mono.just(parameterValidationError);
+        }
+        
+        // 直接调用API（这里重用现有的API调用逻辑）
+        return callApiInternal(tool, parameters)
+            .doOnSuccess(response -> log.info("API调用成功，响应长度: {}", response.length()))
+            .doOnError(error -> log.error("API调用失败", error));
     }
-
     
+    /**
+     * 验证必需参数
+     */
+    private String validateRequiredParameters(DatabaseApiToolConfig.ApiTool tool, Map<String, Object> parameters) {
+        if (tool.getParameters() == null || tool.getParameters().isEmpty()) {
+            log.debug("工具 {} 没有定义参数", tool.getName());
+            return null;
+        }
+        
+        log.debug("开始验证工具 {} 的必需参数", tool.getName());
+        
+        for (Map.Entry<String, DatabaseApiToolConfig.ParameterInfo> entry : tool.getParameters().entrySet()) {
+            String paramName = entry.getKey();
+            DatabaseApiToolConfig.ParameterInfo paramInfo = entry.getValue();
+            
+            if (paramInfo.isRequired()) {
+                boolean hasParam = parameters != null && parameters.containsKey(paramName);
+                Object paramValue = parameters != null ? parameters.get(paramName) : null;
+                boolean hasValue = paramValue != null && !paramValue.toString().trim().isEmpty();
+                
+                log.debug("检查必需参数 {}: 存在={}, 值={}, 有效值={}", 
+                    paramName, hasParam, paramValue, hasValue);
+                
+                if (!hasParam || !hasValue) {
+                    // 生成友好的参数提示
+                    StringBuilder hint = new StringBuilder();
+                    hint.append("工具 '").append(tool.getName()).append("' 缺少必需参数。\n\n");
+                    
+                    // 添加工具描述（如果有）
+                    if (tool.getDescription() != null && !tool.getDescription().trim().isEmpty()) {
+                        hint.append("工具说明: ").append(tool.getDescription()).append("\n\n");
+                    }
+                    
+                    hint.append("必需参数列表:\n");
+                    
+                    for (Map.Entry<String, DatabaseApiToolConfig.ParameterInfo> paramEntry : tool.getParameters().entrySet()) {
+                        DatabaseApiToolConfig.ParameterInfo info = paramEntry.getValue();
+                        if (info.isRequired()) {
+                            hint.append("• ").append(paramEntry.getKey());
+                            
+                            // 添加参数类型
+                            if (info.getType() != null && !info.getType().trim().isEmpty()) {
+                                hint.append(" (类型: ").append(info.getType()).append(")");
+                            }
+                            
+                            // 添加参数描述
+                            if (info.getDescription() != null && !info.getDescription().trim().isEmpty()) {
+                                hint.append(" - ").append(info.getDescription());
+                            }
+                            
+                            hint.append("\n");
+                        }
+                    }
+                    
+                    hint.append("\n请提供所有必需参数后重试。");
+                    
+                    return hint.toString();
+                }
+            }
+        }
+        
+        log.debug("工具 {} 的参数验证通过", tool.getName());
+        return null;
+    }
+    
+    /**
+     * 根据名称查找工具
+     */
     private DatabaseApiToolConfig.ApiTool findToolByName(String name) {
         return databaseApiToolConfig.getTools().stream()
             .filter(tool -> tool.getName().equals(name))
@@ -183,207 +257,53 @@ public class DynamicToolService {
     }
     
     /**
-     * 解析自然语言参数
+     * 根据名称和项目ID查找工具（带安全验证）
      */
-    private Map<String, Object> parseNaturalLanguageParameters(String naturalLanguageInput, DatabaseApiToolConfig.ApiTool tool) {
-        Map<String, Object> parsedParams = new HashMap<>();
-        
-        if (naturalLanguageInput == null || naturalLanguageInput.trim().isEmpty()) {
-            return parsedParams;
-        }
-        
-        log.info("开始解析自然语言参数: {}", naturalLanguageInput);
-        
-        String input = naturalLanguageInput.trim();
-        
-        // 方法1: 使用正则表达式匹配所有 key=value 对，支持空格和逗号分隔
-        String pattern = "([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*([^\\s,，]+(?:\\s*[^=\\s,，]*)*?)(?=\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s*=|\\s*[,，]\\s*[a-zA-Z_][a-zA-Z0-9_]*\\s*=|$)";
-        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
-        java.util.regex.Matcher matcher = regex.matcher(input);
-        
-        while (matcher.find()) {
-            String key = matcher.group(1).trim();
-            String value = matcher.group(2).trim();
-            
-            // 处理数组格式 ["value1", "value2"]
-            if (value.startsWith("[") && value.endsWith("]")) {
-                String arrayContent = value.substring(1, value.length() - 1);
-                String[] arrayValues = arrayContent.split(",");
-                List<String> arrayList = new ArrayList<>();
-                for (String arrayValue : arrayValues) {
-                    String cleanValue = arrayValue.trim().replaceAll("^\"|\"$", "");
-                    arrayList.add(cleanValue);
-                }
-                parsedParams.put(key, arrayList);
-                log.info("解析数组参数: {} = {}", key, arrayList);
-            } else {
-                // 移除可能的引号和多余空格
-                value = value.replaceAll("^\"|\"$", "").trim();
-                parsedParams.put(key, value);
-                log.info("解析字符串参数: {} = {}", key, value);
-            }
-        }
-        
-        // 方法2: 如果正则匹配失败或结果不完整，使用改进的分割方式
-        if (parsedParams.isEmpty()) {
-            log.warn("正则匹配失败，使用分割方式解析");
-            
-            // 先按逗号分割，再按空格分割
-            String[] parts = input.split("[,，]");
-            for (String part : parts) {
-                part = part.trim();
-                if (part.contains("=")) {
-                    String[] keyValue = part.split("=", 2);
-                    if (keyValue.length == 2) {
-                        String key = keyValue[0].trim();
-                        String value = keyValue[1].trim();
-                        
-                        // 检查是否为数组格式
-                        if (value.startsWith("[") && value.endsWith("]")) {
-                            String arrayContent = value.substring(1, value.length() - 1);
-                            String[] arrayValues = arrayContent.split(",");
-                            List<String> arrayList = new ArrayList<>();
-                            for (String arrayValue : arrayValues) {
-                                String cleanValue = arrayValue.trim().replaceAll("^\"|\"$", "");
-                                arrayList.add(cleanValue);
-                            }
-                            parsedParams.put(key, arrayList);
-                            log.info("分割解析数组参数: {} = {}", key, arrayList);
-                        } else {
-                            parsedParams.put(key, value);
-                            log.info("分割解析参数: {} = {}", key, value);
-                        }
-                    }
-                }
-            }
-            
-            // 如果还是没有结果，尝试按空格分割
-            if (parsedParams.isEmpty()) {
-                log.warn("逗号分割失败，尝试空格分割");
-                parts = input.split("\\s+");
-                for (String part : parts) {
-                    part = part.trim();
-                    if (part.contains("=")) {
-                        String[] keyValue = part.split("=", 2);
-                        if (keyValue.length == 2) {
-                            String key = keyValue[0].trim();
-                            String value = keyValue[1].trim();
-                            // 移除可能的尾部逗号
-                            value = value.replaceAll("[,，]$", "");
-                            
-                            // 检查是否为数组格式
-                            if (value.startsWith("[") && value.endsWith("]")) {
-                                String arrayContent = value.substring(1, value.length() - 1);
-                                String[] arrayValues = arrayContent.split(",");
-                                List<String> arrayList = new ArrayList<>();
-                                for (String arrayValue : arrayValues) {
-                                    String cleanValue = arrayValue.trim().replaceAll("^\"|\"$", "");
-                                    arrayList.add(cleanValue);
-                                }
-                                parsedParams.put(key, arrayList);
-                                log.info("空格分割解析数组参数: {} = {}", key, arrayList);
-                            } else {
-                                parsedParams.put(key, value);
-                                log.info("空格分割解析参数: {} = {}", key, value);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        log.info("参数解析完成，共解析出 {} 个参数: {}", parsedParams.size(), parsedParams);
-        return parsedParams;
-    }
-    
-    /**
-     * 验证必填参数
-     */
-    private String validateRequiredParameters(DatabaseApiToolConfig.ApiTool tool, Map<String, Object> parameters) {
-        if (tool.getParameters() == null) {
-            log.info("工具 {} 没有定义参数", tool.getName());
+    private DatabaseApiToolConfig.ApiTool findToolByNameAndProjectId(String name, Long projectId) {
+        DatabaseApiToolConfig.ApiTool tool = findToolByName(name);
+        if (tool == null) {
             return null;
         }
         
-        log.info("开始验证工具 {} 的必填参数", tool.getName());
-        log.info("当前解析的参数: {}", parameters);
-        
-        for (Map.Entry<String, DatabaseApiToolConfig.ParameterInfo> entry : tool.getParameters().entrySet()) {
-            String paramName = entry.getKey();
-            DatabaseApiToolConfig.ParameterInfo paramInfo = entry.getValue();
-            
-            log.info("检查参数: {} (必需: {})", paramName, paramInfo.isRequired());
-            
-            if (paramInfo.isRequired()) {
-                boolean hasParam = parameters != null && parameters.containsKey(paramName);
-                Object paramValue = parameters != null ? parameters.get(paramName) : null;
-                boolean hasValue = paramValue != null && !paramValue.toString().trim().isEmpty();
-                
-                log.info("参数 {} 存在: {}, 值: {}, 有效值: {}", 
-                    paramName, hasParam, paramValue, hasValue);
-                
-                if (!hasParam || !hasValue) {
-                    String errorMsg = String.format("参数%s为必填项。当前参数: %s", 
-                        paramName, parameters);
-                    log.error(errorMsg);
-                    return errorMsg;
-                }
-            }
+        // 如果指定了项目ID，验证工具是否属于该项目
+        if (projectId != null && !projectId.equals(tool.getProjectId())) {
+            log.warn("工具 {} 不属于项目 {}，实际属于项目 {}", name, projectId, tool.getProjectId());
+            return null;
         }
         
-        log.info("参数验证通过");
-        return null;
+        return tool;
     }
-    
+
     /**
      * 向响应JSON中添加type字段
      */
     private String addTypeToResponse(String response, String dataType) {
-        log.info("=== 开始添加type字段 ===");
-        log.info("dataType: [{}]", dataType);
-        log.info("response长度: {}", response != null ? response.length() : 0);
-        log.info("response前100字符: {}", response != null && response.length() > 100 ? response.substring(0, 100) + "..." : response);
-        
         try {
             if (dataType == null || dataType.trim().isEmpty()) {
-                log.warn("dataType为空或空字符串，直接返回原始响应");
                 return response;
             }
             
             if (response == null || response.trim().isEmpty()) {
-                log.warn("response为空，直接返回");
                 return response;
             }
             
             JsonNode jsonNode = objectMapper.readTree(response);
-            log.info("成功解析JSON，节点类型: {}", jsonNode.getClass().getSimpleName());
             
             // 如果是ObjectNode，直接添加type字段
             if (jsonNode instanceof ObjectNode) {
                 ObjectNode objectNode = (ObjectNode) jsonNode;
                 objectNode.put("type", dataType);
-                String result = objectMapper.writeValueAsString(objectNode);
-                log.info("成功添加type字段到ObjectNode");
-                log.info("添加type字段后的结果长度: {}", result.length());
-                log.info("添加type字段后的结果前100字符: {}", result.length() > 100 ? result.substring(0, 100) + "..." : result);
-                return result;
+                return objectMapper.writeValueAsString(objectNode);
             }
             
             // 如果不是对象格式，包装成对象并添加type字段
             ObjectNode wrapper = objectMapper.createObjectNode();
             wrapper.put("type", dataType);
             wrapper.set("data", jsonNode);
-            String result = objectMapper.writeValueAsString(wrapper);
-            log.info("成功包装并添加type字段");
-            log.info("包装后的结果长度: {}", result.length());
-            log.info("包装后的结果前100字符: {}", result.length() > 100 ? result.substring(0, 100) + "..." : result);
-            return result;
+            return objectMapper.writeValueAsString(wrapper);
             
         } catch (Exception e) {
-            log.error("=== 添加type字段失败 ===");
-            log.error("dataType: [{}]", dataType);
-            log.error("response: {}", response);
-            log.error("异常信息: ", e);
+            log.error("添加type字段失败", e);
             return response;
         }
     }

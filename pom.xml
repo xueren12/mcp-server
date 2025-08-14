@@ -7,43 +7,21 @@
         <version>3.3.3</version>
         <relativePath/>
     </parent>
-    <groupId>org.example</groupId>
-    <artifactId>spring-ai-mcp-sse-server</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.guian</groupId>
+    <artifactId>mcp-server</artifactId>
+    <version>1.0.0</version>
+    <name>MCP Server</name>
+    <description>纯MCP协议工具提供者，专注于MCP协议实现和工具服务</description>
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-ai.version>1.0.0-M6</spring-ai.version>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <!-- Spring Boot WebFlux for reactive programming and MCP protocol -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-        
-        <!-- Spring AI Core -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-core</artifactId>
-        </dependency>
-        
-        <!-- Spring AI OpenAI -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
         </dependency>
         
         <!-- Lombok -->

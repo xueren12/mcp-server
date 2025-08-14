@@ -1,4 +1,3 @@
-com\guian\smartsite\server\config\WebClientConfig.class
 com\guian\smartsite\server\config\DatabaseApiToolConfig$ParameterInfo.class
 com\guian\smartsite\server\service\DynamicToolService.class
 com\guian\smartsite\server\config\DataInitializer.class

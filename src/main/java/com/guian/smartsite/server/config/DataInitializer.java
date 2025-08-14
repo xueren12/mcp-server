@@ -20,16 +20,16 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
-            log.info("开始检查API工具数据...");
+            log.info("开始检查可用的API数据...");
             
-            // 只读取数据库中现有的API工具数量
+            // 读取数据库中所有可用的API数量
             long count = apiInfoRepository.findByProjectId(1953288277076803585L).size();
-            log.info("当前数据库中有 {} 条API工具记录", count);
+            log.info("当前数据库中有 {} 条可用的API记录", count);
             
             if (count > 0) {
-                log.info("数据库中已存在API工具数据，系统可以正常使用");
+                log.info("数据库中已存在API数据，系统启动时将自动注册为MCP工具");
             } else {
-                log.warn("数据库中暂无API工具数据，请联系管理员导入基础数据");
+                log.warn("数据库中暂无可用的API数据，请联系管理员添加API配置");
             }
             
         } catch (Exception e) {

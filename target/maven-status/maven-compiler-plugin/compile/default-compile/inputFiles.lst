@@ -1,8 +1,10 @@
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\DatabaseApiToolConfig.java
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\DataInitializer.java
-c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\WebClientConfig.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\config\WebFluxConfig.java
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\controller\McpProtocolController.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\controller\ToolManagementController.java
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\entity\ApiInfo.java
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\repository\ApiInfoRepository.java
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\service\DynamicToolService.java
+c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\service\ToolRegistrationService.java
 c:\Users\Administrator\Desktop\mcp-server\src\main\java\com\guian\smartsite\server\SmartSiteServerApplication.java

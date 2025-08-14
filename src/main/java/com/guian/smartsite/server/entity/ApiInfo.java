@@ -108,4 +108,10 @@ public class ApiInfo {
      */
     @Column(name = "data_type")
     private String dataType = "API";
+    
+    /**
+     * MCP工具标志：0-已注册为MCP工具，2-未注册为MCP工具
+     */
+    @Column(name = "mcp_flag")
+    private String mcpFlag = "2";
 }
