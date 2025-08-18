@@ -227,6 +227,16 @@ public class McpProtocolController {
                     log.info("结果长度: {}", result != null ? result.length() : 0);
                     log.info("结果内容前200字符: {}", result != null && result.length() > 200 ? result.substring(0, 200) + "..." : result);
                     
+                    // 检查是否为参数验证错误或其他错误信息
+                    if (result != null && (result.contains("缺少必需参数") || 
+                                          result.contains("参数验证失败") || 
+                                          result.contains("工具不存在") ||
+                                          result.startsWith("错误:") ||
+                                          result.startsWith("参数错误:"))) {
+                        log.error("工具调用参数验证失败: {}", result);
+                        return ResponseEntity.ok(createErrorResponse(id, -32602, result));
+                    }
+                    
                     Map<String, Object> content = Map.of(
                         "type", "text",
                         "text", result

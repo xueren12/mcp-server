@@ -13,6 +13,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -205,37 +206,19 @@ public class DynamicToolService {
                     paramName, hasParam, paramValue, hasValue);
                 
                 if (!hasParam || !hasValue) {
-                    // 生成友好的参数提示
+                    // 生成简洁的参数提示
                     StringBuilder hint = new StringBuilder();
-                    hint.append("工具 '").append(tool.getName()).append("' 缺少必需参数。\n\n");
+                    hint.append("缺少必需参数: ");
                     
-                    // 添加工具描述（如果有）
-                    if (tool.getDescription() != null && !tool.getDescription().trim().isEmpty()) {
-                        hint.append("工具说明: ").append(tool.getDescription()).append("\n\n");
-                    }
-                    
-                    hint.append("必需参数列表:\n");
-                    
+                    List<String> requiredParams = new ArrayList<>();
                     for (Map.Entry<String, DatabaseApiToolConfig.ParameterInfo> paramEntry : tool.getParameters().entrySet()) {
                         DatabaseApiToolConfig.ParameterInfo info = paramEntry.getValue();
                         if (info.isRequired()) {
-                            hint.append("• ").append(paramEntry.getKey());
-                            
-                            // 添加参数类型
-                            if (info.getType() != null && !info.getType().trim().isEmpty()) {
-                                hint.append(" (类型: ").append(info.getType()).append(")");
-                            }
-                            
-                            // 添加参数描述
-                            if (info.getDescription() != null && !info.getDescription().trim().isEmpty()) {
-                                hint.append(" - ").append(info.getDescription());
-                            }
-                            
-                            hint.append("\n");
+                            requiredParams.add(paramEntry.getKey());
                         }
                     }
                     
-                    hint.append("\n请提供所有必需参数后重试。");
+                    hint.append(String.join(", ", requiredParams));
                     
                     return hint.toString();
                 }
